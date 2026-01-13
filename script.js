@@ -1,14 +1,10 @@
-/**
- * KONFIGURACE A STAV
- */
 const API_KEY = CONFIG.API_KEY;
 const BASE_URL = "https://api.themoviedb.org/3";
 const IMG_URL = "https://image.tmdb.org/t/p/w500";
 const BACKDROP_URL = "https://image.tmdb.org/t/p/original";
 
-// Objekt stavu pro správu stavu aplikace
 const state = {
-  view: "home", // home (domů), search (hledání), favorites (oblíbené), watched (zhlédnuté)
+  view: "home",
   page: 1,
   totalPages: 1,
   isLoading: false,
@@ -20,31 +16,21 @@ const state = {
   currentModalItem: null,
 };
 
-// Mezipaměť pro žánry
 let genreMap = {};
 
-/**
- * DOM ELEMENTY
- */
 const grid = document.getElementById("movie-grid");
 const loader = document.getElementById("loader");
-// const searchInput = document.getElementById("search-input"); // Odstraněno
 const pageTitle = document.getElementById("page-title");
 const typeSelect = document.getElementById("filter-type");
 const genreSelect = document.getElementById("filter-genre");
 const modal = document.getElementById("modal");
 
-// Elementy vyhledávacího modálního okna
 const searchModal = document.getElementById("search-modal");
 const modalSearchInput = document.getElementById("modal-search-input");
 const closeSearchBtn = document.getElementById("close-search");
 const navSearchIcon = document.getElementById("nav-search-icon");
 
-/**
- * INICIALIZACE
- */
 async function init() {
-  // Skrytí přednačítání (Preloader)
   window.addEventListener("load", () => {
     const preloader = document.getElementById("preloader");
     preloader.classList.add("hidden");
@@ -53,20 +39,16 @@ async function init() {
     }, 500);
   });
 
-  // Načtení žánrů
   await fetchGenres();
 
-  // Načtení doporučeného filmu
   fetchFeaturedMovie();
 
-  // Zpracování směrování URL při načtení
   handleRoute();
 
-  // Posluchače událostí pro navigaci
   window.addEventListener("popstate", handleRoute);
 
   document.querySelectorAll(".nav-item").forEach((el) => {
-    if (el.id === "nav-search-icon") return; // Přeskočit ikonu hledání
+    if (el.id === "nav-search-icon") return;
     el.addEventListener("click", (e) => {
       e.preventDefault();
       const view = e.currentTarget.dataset.view;
@@ -74,7 +56,6 @@ async function init() {
     });
   });
 
-  // Posluchače vyhledávacího modálního okna
   navSearchIcon.addEventListener("click", () => {
     searchModal.classList.add("active");
     modalSearchInput.focus();
@@ -84,33 +65,28 @@ async function init() {
     searchModal.classList.remove("active");
   });
 
-  // Zavření vyhledávacího modálního okna při kliknutí mimo
   searchModal.addEventListener("click", (e) => {
     if (e.target === searchModal) {
       searchModal.classList.remove("active");
     }
   });
 
-  // Posluchač vstupu vyhledávání
   let debounce;
-  modalSearchInput.addEventListener("input", (e) => {
-    // Volitelné: Živé vyhledávání uvnitř modálního okna?
-    // Nebo jen čekat na Enter?
-    // Prozatím použijeme Enter pro jednoduchost, nebo debounce navigaci
-  });
+  modalSearchInput.addEventListener("input", (e) => {});
 
   modalSearchInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       const query = e.target.value.trim();
       if (query) {
         searchModal.classList.remove("active");
-        navigateTo("search", { q: query });
-        modalSearchInput.value = ""; // Vymazat nebo ponechat?
+        navigateTo("search", {
+          q: query
+        });
+        modalSearchInput.value = "";
       }
     }
   });
 
-  // Posluchače filtrů
   typeSelect.addEventListener("change", () => {
     state.filters.type = typeSelect.value;
     resetAndFetch();
@@ -121,31 +97,26 @@ async function init() {
     resetAndFetch();
   });
 
-  // Posluchače modálního okna
   document.getElementById("modal-close").addEventListener("click", closeModal);
   document
     .getElementById("modal-backdrop")
     .addEventListener("click", closeModal);
 
-  // Tlačítka personalizace
   document.getElementById("btn-fav").addEventListener("click", toggleFavorite);
   document.getElementById("btn-watch").addEventListener("click", toggleWatched);
   document.getElementById("btn-save-note").addEventListener("click", saveNote);
 
-  // Posluchač náhodné kostky
   document
     .getElementById("nav-dice")
     .addEventListener("click", recommendRandomMovie);
 
-  // Zavření vyhledávacího modálního okna
   document.getElementById("close-search").addEventListener("click", () => {
     document.getElementById("search-modal").classList.remove("active");
     document.body.classList.remove("modal-open");
   });
 
-  // Nekonečné posouvání (Infinite Scroll)
   window.addEventListener("scroll", () => {
-    if (state.view === "favorites" || state.view === "watched") return; // Žádné načítání při posouvání pro lokální seznamy
+    if (state.view === "favorites" || state.view === "watched") return;
     if (
       window.innerHeight + window.scrollY >=
       document.body.offsetHeight - 500
@@ -155,12 +126,9 @@ async function init() {
   });
 }
 
-/**
- * SYSTÉM SMĚROVÁNÍ (ROUTING)
- */
 function navigateTo(view, params = {}) {
   let url = new URL(window.location);
-  url.searchParams.delete("id"); // Vymazat parametr modálního okna při přepínání pohledů
+  url.searchParams.delete("id");
 
   if (view === "home") {
     url.search = "";
@@ -172,7 +140,6 @@ function navigateTo(view, params = {}) {
     url.searchParams.set("view", "watched");
   }
 
-  // Push State (změna historie prohlížeče)
   window.history.pushState({}, "", url);
   handleRoute();
 }
@@ -183,21 +150,19 @@ function handleRoute() {
   const searchParam = params.get("q");
   const idParam = params.get("id");
 
-  // 1. Určení hlavního pohledu
   const heroSection = document.getElementById("hero-section");
 
   if (searchParam) {
     state.view = "search";
     state.searchQuery = searchParam;
-    // searchInput.value = searchParam; // Odstraněno
     pageTitle.textContent = `Výsledky pro "${searchParam}"`;
     document.getElementById("controls-area").style.display = "flex";
     if (heroSection) heroSection.style.display = "none";
-    updateNavUI(""); // Žádná aktivní navigace pro vyhledávání
+    updateNavUI("");
   } else if (viewParam === "favorites") {
     state.view = "favorites";
     pageTitle.textContent = "Můj seznam ke zhlédnutí";
-    document.getElementById("controls-area").style.display = "none"; // Skrýt filtry/hledání
+    document.getElementById("controls-area").style.display = "none";
     if (heroSection) heroSection.style.display = "none";
     updateNavUI("favorites");
   } else if (viewParam === "watched") {
@@ -214,7 +179,6 @@ function handleRoute() {
     updateNavUI("home");
   }
 
-  // Spustit animaci přechodu
   const animatedElements = [
     grid,
     pageTitle,
@@ -223,12 +187,11 @@ function handleRoute() {
   animatedElements.forEach((el) => {
     if (el) {
       el.classList.remove("fade-in");
-      void el.offsetWidth; // Trigger reflow
+      void el.offsetWidth;
       el.classList.add("fade-in");
     }
   });
 
-  // 2. Reset a vykreslení mřížky
   state.page = 1;
   grid.innerHTML = "";
 
@@ -238,10 +201,7 @@ function handleRoute() {
     fetchData();
   }
 
-  // 3. Zpracování modálního okna (Deep Linking)
   if (idParam) {
-    // Určit typ, pokud je to možné, jinak výchozí film.
-    // Protože parametr URL je pouze ID, načteme obecné podrobnosti.
     openModalById(idParam);
   } else {
     closeModalUI();
@@ -256,13 +216,8 @@ function updateNavUI(activeView) {
   if (activeEl) activeEl.classList.add("active");
 }
 
-/**
- * NAČÍTÁNÍ DAT
- */
 async function fetchGenres() {
   try {
-    // Načtení žánrů pro filmy i seriály
-    // Přidán parametr language=cs pro české názvy žánrů
     const [resM, resT] = await Promise.all([
       fetch(`${BASE_URL}/genre/movie/list?api_key=${API_KEY}&language=cs`),
       fetch(`${BASE_URL}/genre/tv/list?api_key=${API_KEY}&language=cs`),
@@ -270,7 +225,6 @@ async function fetchGenres() {
     const dataM = await resM.json();
     const dataT = await resT.json();
 
-    // Kombinace a mapování
     const allGenres = [...dataM.genres, ...dataT.genres];
     const uniqueGenres = [];
     const map = new Map();
@@ -282,7 +236,6 @@ async function fetchGenres() {
       }
     }
 
-    // Naplnění rozbalovací nabídky
     uniqueGenres.sort((a, b) => a.name.localeCompare(b.name));
     uniqueGenres.forEach((g) => {
       const opt = document.createElement("option");
@@ -297,15 +250,12 @@ async function fetchGenres() {
 
 async function fetchFeaturedMovie() {
   try {
-    // Načtení trendy filmů
-    // Přidán parametr language=cs pro české popisky
     const res = await fetch(
       `${BASE_URL}/trending/movie/week?api_key=${API_KEY}&language=cs`
     );
     const data = await res.json();
 
     if (data.results && data.results.length > 0) {
-      // Vybrat první nebo náhodný z top 5
       const item = data.results[Math.floor(Math.random() * 5)];
 
       const heroSection = document.getElementById("hero-section");
@@ -323,11 +273,9 @@ async function fetchFeaturedMovie() {
       heroTitle.textContent = item.title || item.name;
       heroDesc.textContent = item.overview;
 
-      // Zajistit nastavení media_type pro openModal
       if (!item.media_type) item.media_type = "movie";
       heroBtn.onclick = () => openModal(item);
 
-      // Zobrazit pouze pokud jsme na domovské stránce
       if (state.view === "home") {
         heroSection.style.display = "block";
       }
@@ -343,9 +291,7 @@ async function recommendRandomMovie() {
   loader.style.opacity = 1;
 
   try {
-    // Načíst náhodnou stránku z trendy (1-10)
     const randomPage = Math.floor(Math.random() * 10) + 1;
-    // Přidán parametr language=cs
     const url = `${BASE_URL}/trending/all/week?api_key=${API_KEY}&page=${randomPage}&language=cs`;
 
     const res = await fetch(url);
@@ -376,16 +322,13 @@ async function fetchData() {
 
   let url;
 
-  // Přidán parametr language=cs do všech volání API
   if (state.view === "search") {
     url = `${BASE_URL}/search/multi?api_key=${API_KEY}&query=${encodeURIComponent(
       state.searchQuery
     )}&page=${state.page}&language=cs`;
   } else {
-    // Výchozí Trendy
-    // Pokud jsou použity filtry, potřebujeme endpoint 'discover' místo 'trending'
     if (state.filters.type !== "all" || state.filters.genre !== "all") {
-      const type = state.filters.type === "all" ? "movie" : state.filters.type; // Discover defaultně filmy, pokud vše
+      const type = state.filters.type === "all" ? "movie" : state.filters.type;
       url = `${BASE_URL}/discover/${type}?api_key=${API_KEY}&page=${state.page}&sort_by=popularity.desc&language=cs`;
 
       if (state.filters.genre !== "all") {
@@ -408,15 +351,12 @@ async function fetchData() {
     }
 
     data.results.forEach((item) => {
-      // Odfiltrovat osoby
       if (item.media_type === "person") return;
 
-      // Klientský filtr pro smíšené výsledky, pokud je potřeba (jako Hledání)
       if (state.filters.type !== "all") {
         if (state.filters.type === "movie" && item.media_type === "tv") return;
         if (state.filters.type === "tv" && item.media_type === "movie") return;
       }
-      // Filtr žánrů pro výsledky vyhledávání (API search nepodporuje with_genres)
       if (state.view === "search" && state.filters.genre !== "all") {
         if (
           !item.genre_ids ||
@@ -454,7 +394,7 @@ function createCard(item) {
   const type = item.media_type === "tv" ? "TV Seriál" : "Film";
   const imgPath = item.poster_path ? IMG_URL + item.poster_path : null;
 
-  if (!imgPath) return el; // Přeskočit, pokud není obrázek
+  if (!imgPath) return el;
 
   el.innerHTML = `
           <div class="poster-wrapper">
@@ -470,15 +410,8 @@ function createCard(item) {
       `;
 
   el.addEventListener("click", () => {
-    // Aktualizovat URL pro zahrnutí ID
     const u = new URL(window.location);
     u.searchParams.set("id", item.id);
-    // Potřebujeme znát media_type pro vyhledání ID.
-    // Pokud je to trendy/hledání, máme to. Pokud lokalizované, máme to.
-    // Uložíme to do dočasného atributu nebo předáme.
-    // Zjednodušeně: Předpokládáme 'movie', pokud chybí, nebo zkusíme obojí.
-    // Lepší: Předat typ v URL? Ne, nechat čisté.
-    // Předáme objekt položky přímo do openModal.
     window.history.pushState({}, "", u);
     openModal(item);
   });
@@ -486,9 +419,6 @@ function createCard(item) {
   return el;
 }
 
-/**
- * VYKRESLENÍ LOKÁLNÍHO SEZNAMU
- */
 function renderLocalList(key) {
   loader.style.opacity = 0;
   const list = getLocalData(key);
@@ -503,28 +433,21 @@ function renderLocalList(key) {
 
   ids.forEach((id) => {
     const item = list[id];
-    const card = createCard(item); // Položka musí mít strukturu podobnou výsledku API
+    const card = createCard(item);
     grid.appendChild(card);
   });
 }
 
-/**
- * MODÁLNÍ OKNO A PODROBNOSTI
- */
 async function openModalById(id) {
-  // Pokud používáme deep linking, nemáme objekt. Musíme ho načíst.
-  // Zkusit načíst jako film nejdříve.
   try {
     let res = await fetch(
       `${BASE_URL}/movie/${id}?api_key=${API_KEY}&language=cs`
     );
     if (!res.ok) {
-      // Zkusit TV
       res = await fetch(`${BASE_URL}/tv/${id}?api_key=${API_KEY}&language=cs`);
     }
     if (res.ok) {
       const item = await res.json();
-      // Normalizovat media_type
       if (!item.media_type) item.media_type = item.title ? "movie" : "tv";
       openModal(item);
     }
@@ -536,7 +459,6 @@ async function openModalById(id) {
 async function openModal(item) {
   state.currentModalItem = item;
 
-  // 1. Základní informace (Okamžité)
   document.getElementById("modal-title").textContent = item.title || item.name;
   document.getElementById("modal-overview").textContent =
     item.overview || "Popis není k dispozici.";
@@ -560,31 +482,25 @@ async function openModal(item) {
   document.getElementById("modal-type-badge").textContent =
     type === "tv" ? "SERIÁL" : "FILM";
 
-  // 2. Stav lokálních dat
   updateModalButtons(item.id);
   const notes = getLocalData("notes");
   document.getElementById("user-note").value = notes[item.id] || "";
 
-  // Zobrazit modální okno
   modal.classList.add("active");
   document.body.classList.add("modal-open");
 
-  // 3. Načíst podrobnosti (Obsazení, Délka)
   fetchDetails(item.id, type);
 }
 
 async function fetchDetails(id, type) {
-  // Resetovat pole
   document.getElementById("modal-cast").innerHTML = "Načítání...";
   document.getElementById("modal-runtime").textContent = "";
 
   try {
-    // Přidán parametr language=cs
     const url = `${BASE_URL}/${type}/${id}?api_key=${API_KEY}&append_to_response=credits&language=cs`;
     const res = await fetch(url);
     const data = await res.json();
 
-    // Délka
     if (data.runtime)
       document.getElementById(
         "modal-runtime"
@@ -594,8 +510,7 @@ async function fetchDetails(id, type) {
         "modal-runtime"
       ).textContent = `${data.episode_run_time[0]} min`;
 
-    // Obsazení
-    const cast = data.credits.cast.slice(0, 8); // Top 8
+    const cast = data.credits.cast.slice(0, 8);
     const castContainer = document.getElementById("modal-cast");
     castContainer.innerHTML = "";
 
@@ -615,7 +530,6 @@ async function fetchDetails(id, type) {
 
 function closeModal() {
   closeModalUI();
-  // Odstranit ID z URL
   const u = new URL(window.location);
   u.searchParams.delete("id");
   window.history.pushState({}, "", u);
@@ -627,9 +541,6 @@ function closeModalUI() {
   state.currentModalItem = null;
 }
 
-/**
- * LOKÁLNÍ ÚLOŽIŠTĚ A PERSONALIZACE
- */
 function getLocalData(key) {
   const data = localStorage.getItem(`movieApp_${key}`);
   return data ? JSON.parse(data) : {};
@@ -652,7 +563,6 @@ function toggleFavorite() {
   saveLocalData("favorites", list);
   updateModalButtons(id);
 
-  // Pokud prohlížíme seznam, obnovit
   if (state.view === "favorites") renderLocalList("favorites");
 }
 
@@ -709,7 +619,6 @@ function updateModalButtons(id) {
   }
 }
 
-// Pomocná funkce pro ořezání objektu na nezbytné údaje pro uložení
 function normalizeItem(item) {
   return {
     id: item.id,
@@ -721,5 +630,4 @@ function normalizeItem(item) {
   };
 }
 
-// Spuštění
 init();

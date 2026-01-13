@@ -13,19 +13,16 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <!-- Background Blobs -->
     <div class="background-blobs">
       <div class="blob blob-1"></div>
       <div class="blob blob-2"></div>
       <div class="blob blob-3"></div>
     </div>
 
-    <!-- Preloader -->
     <div id="preloader">
       <div class="spinner"></div>
     </div>
 
-    <!-- Search Modal -->
     <div id="search-modal" class="search-modal-overlay">
       <div class="search-modal-content">
         <button id="close-search" class="close-search">&times;</button>
@@ -38,7 +35,6 @@
       </div>
     </div>
 
-    <!-- Navigation Dock -->
     <nav class="nav-dock">
       <a href="#" class="nav-logo" onclick="location.reload()">
         <svg viewBox="0 0 24 24">
@@ -91,7 +87,6 @@
     </nav>
 
     <div class="app-container">
-      <!-- Hero Section -->
       <div id="hero-section" class="hero-section">
         <img id="hero-bg" class="hero-bg" src="" alt="Hero Background" />
         <div class="hero-overlay"></div>
@@ -107,9 +102,7 @@
         </div>
       </div>
 
-      <!-- Controls: Search & Filter -->
       <div class="controls-wrapper" id="controls-area">
-        <!-- Search removed, moved to modal -->
 
         <div class="filters-bar" id="filters-bar">
           <select id="filter-type" class="filter-select">
@@ -119,12 +112,10 @@
           </select>
           <select id="filter-genre" class="filter-select">
             <option value="all">Žánry</option>
-            <!-- Genres injected via JS -->
           </select>
         </div>
       </div>
 
-      <!-- Content Area -->
       <div class="section-header">
         <div class="section-title" id="page-title">Trendy</div>
         <div
@@ -134,14 +125,12 @@
       </div>
 
       <div class="movie-grid" id="movie-grid">
-        <!-- Items injected here -->
       </div>
 
       <div class="loader" id="loader">
         <div class="spinner"></div>
       </div>
 
-      <!-- Hero Section (Featured Movie) -->
       <div class="hero-section" id="hero-section">
         <img
           src="https://via.placeholder.com/800x450"
@@ -167,7 +156,6 @@
       </div>
     </div>
 
-    <!-- Details Modal -->
     <div class="modal" id="modal">
       <div class="modal-backdrop" id="modal-backdrop"></div>
       <div class="modal-content">
@@ -224,7 +212,6 @@
 
               <div class="modal-section-title">Herci</div>
               <div class="cast-list" id="modal-cast">
-                <!-- Cast injected -->
               </div>
             </div>
 
